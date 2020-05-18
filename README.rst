@@ -9,8 +9,8 @@ cem
 .. image:: https://img.shields.io/travis/lewisbails/cem.svg
         :target: https://travis-ci.com/lewisbails/cem
 
-.. image:: https://readthedocs.org/projects/cem/badge/?version=latest
-        :target: https://cem.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/cem-coarsened-exact-matching-for-causal-inference/badge/?version=latest
+        :target: https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 
@@ -24,7 +24,7 @@ https://gking.harvard.edu/files/abs/cem-plus-abs.shtml
 
 
 * Free software: MIT license
-* Documentation: https://cem.readthedocs.io.
+* Documentation: https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io.
 
 
 Features
