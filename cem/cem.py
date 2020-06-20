@@ -1,4 +1,6 @@
-'''Coarsened exact matching for causal inference'''
+'''Coarsened exact matching for causal inference
+(Iacus et al. 2012)
+'''
 
 from __future__ import absolute_import
 
@@ -21,7 +23,7 @@ from typing import Union
 from .imbalance import imbalance, get_imbalance_params, _univariate_imbalance
 
 __author__ = "Lewis Bails <lewis.bails@gmail.com>"
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 
 class CEM:
@@ -73,7 +75,7 @@ class CEM:
         rows = []
         n_bins = range(1, 10)
         imb = []
-        df = self.data.drop(outcome, axis=1)
+        df = self.data.drop(self.outcome, axis=1)
         for h in n_bins:
             bins = get_imbalance_params(df.drop(self.treatment, axis=1),
                                         self.measure, self.continuous, h)
