@@ -9,7 +9,7 @@ import pandas as pd
 from .imbalance import imbalance, get_imbalance_params, _univariate_imbalance
 
 __author__ = "Lewis Bails <lewis.bails@gmail.com>"
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 class CEM:

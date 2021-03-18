@@ -11,3 +11,9 @@ History
 ------------------
 
 * Bug fix in cem._find_H
+
+0.1.3 (2021-03-18)
+------------------
+
+* Remove modelling code
+
