@@ -3,8 +3,6 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 from itertools import combinations
-
-from scipy.stats import ttest_ind_from_stats
 from scipy.stats import ttest_ind
 from scipy.stats import chi2_contingency
 
@@ -17,7 +15,9 @@ def imbalance(data, treatment, measure, bins):
         raise NotImplementedError(f'"{measure}" not a valid measure. Choose from {list(MEASURES.keys())}')
 
 
-def get_imbalance_params(data, measure, continuous=[], H=5):
+def get_imbalance_params(data, measure, continuous=None, H=5) -> list:
+    if continuous is None:
+        continuous = []
     if measure == 'l1' or measure == 'l2':
         return _bins_for_L(data, continuous, H)
     else:
