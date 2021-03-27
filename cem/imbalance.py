@@ -1,21 +1,22 @@
-
+from __future__ import annotations
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
+from typing import Union
 from itertools import combinations
 from scipy.stats import ttest_ind
 from scipy.stats import chi2_contingency
 
 
-def imbalance(data, treatment, measure, bins):
-    '''Evaluate multivariate imbalance'''
+def imbalance(data: pd.DataFrame, treatment: str, measure: str, bins: Union[int, list[int], list[np.ndarray]]):
+    '''Evaluate multivariate imbalance of a set of observations'''
     if measure in MEASURES:
         return MEASURES[measure](data, treatment, bins)
     else:
         raise NotImplementedError(f'"{measure}" not a valid measure. Choose from {list(MEASURES.keys())}')
 
 
-def get_imbalance_params(data, measure, continuous=None, H=5) -> list:
+def get_imbalance_params(data: pd.DataFrame, measure: str, continuous=None, H=5) -> list:
     if continuous is None:
         continuous = []
     if measure == 'l1' or measure == 'l2':
@@ -24,13 +25,13 @@ def get_imbalance_params(data, measure, continuous=None, H=5) -> list:
         raise NotImplementedError('Only params for L variants imbalance available')
 
 
-def _bins_for_L(data, continuous, H):
+def _bins_for_L(data: pd.DataFrame, continuous: list[str], H: int):
     def nbins(n, s): return min(s.nunique(), H) if n in continuous else s.nunique()
     bin_edges = [np.histogram_bin_edges(x, bins=nbins(i, x)) for i, x in data.items()]
     return bin_edges
 
 
-def _univariate_imbalance(data, treatment, measure, params):
+def _univariate_imbalance(data: pd.DataFrame, treatment: str, measure: str, params):
     marginal = {}
     # it is assumed the elements of bins lines up with the data (minus the treatment column)
     for col, bin_ in zip(data.drop(treatment, axis=1).columns, params):
@@ -58,18 +59,18 @@ def _univariate_imbalance(data, treatment, measure, params):
     return pd.DataFrame.from_dict(marginal, orient='index')
 
 
-def _L1(data, treatment, bins):
+def _L1(data: pd.DataFrame, treatment: str, bins):
     def func(l, r, m, n): return np.sum(np.abs(l / m - r / n)) / 2
     return _L(data, treatment, bins, func)
 
 
-def _L2(data, treatment, bins):
+def _L2(data: pd.DataFrame, treatment: str, bins):
     def func(l, r, m, n): return np.sqrt(np.sum((l / m - r / n)**2)) / 2
     return _L(data, treatment, bins, func)
 
 
 def _L(data, treatment, bins, func):
-    '''Evaluate Multidimensional Ln score'''
+    '''Evaluate multivariate Ln imbalance'''
     groups = data.groupby(treatment).groups
     data_ = data.drop(treatment, axis=1).copy()
 

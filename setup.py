@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
 """The setup script."""
-
+import pathlib
 from setuptools import setup, find_packages
 
-with open('README.md') as readme_file:
-    readme = readme_file.read()
-
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
+HERE = pathlib.Path(__file__).parent
+README = (HERE / "README.md").read_text()
 
 requirements = [
     'pandas>=1.0',
@@ -30,13 +27,15 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
+        "Programming Language :: Python :: 3",
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
     description="A Python implmentation of Coarsened Exact Matching for causal inference",
     install_requires=requirements,
     license="MIT license",
-    long_description=readme + '\n\n' + history,
+    long_description=README,
+    long_description_content_type="text/markdown",
     include_package_data=True,
     keywords='cem',
     name='cem',

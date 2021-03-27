@@ -1,6 +1,4 @@
-'''Coarsened exact matching for causal inference
-(Iacus et al. 2012)
-'''
+'''Coarsened exact matching for causal inference'''
 
 from __future__ import absolute_import
 
@@ -17,15 +15,18 @@ class CEM:
 
     Parameters
     ----------
-    data : DataFrame
+    data : pandas.DataFrame
+        A dataframe containing the observations
     treatment : str
-        Name of column containing the treatment variable
+        Name of column in dataframe containing the treatment variable
     outcome : str
-        Name of column containing the outcome variable
+        Name of column in dataframe containing the outcome variable
     continuous : list
-        Names of columns containing continous predictors
+        Names of columns in dataframe containing continous predictors
     H : int, optional
-        The number of bins to use for the continuous variables when calculating imbalance
+        The number of bins to use for the continuous variables when calculating imbalance.
+        If None, H will be calculated using a heuristic
+        (i.e. The integer value between lower_H and upper_H that produced the median L1 imbalance)
     measure : str, optional
         Multivariate imbalance measure to use (only L1 and L2 imbalance supported)
 
@@ -71,7 +72,7 @@ class CEM:
         self.preimbalance = imbalance(df, self.treatment, self.measure, self._bins)
 
     def imbalance(self, coarsening: dict, one_to_many: bool = True) -> float:
-        '''Calculate the imbalance remaining after matching the data using some coarsening
+        '''Calculate the multivariate imbalance remaining after matching the data using some coarsening schema
 
         Parameters
         ----------
@@ -80,6 +81,7 @@ class CEM:
             Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "cut"
             "bins" is the first parameter to the "cut" method stipulated (i.e. number of bins or bin edges, etc.)
             "cut" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
+            TODO: This is a very hacky way to pass in a coarsening schema. There must be a better way.
         one_to_many : bool
             False limits the matches in a stratum to k:k
             True allows k:n matches in a stratum
@@ -94,7 +96,7 @@ class CEM:
         return imbalance(df, self.treatment, self.measure, self._bins)
 
     def univariate_imbalance(self, coarsening: dict, one_to_many: bool = True) -> pd.DataFrame:
-        '''Calculate the marginal imbalance remaining after matching the data using some coarsening
+        '''Calculate the marginal (univariate) imbalance remaining after matching the data using some coarsening schema
 
         Parameters
         ----------
@@ -103,20 +105,21 @@ class CEM:
             Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "cut"
             "bins" is the first parameter to the "cut" method stipulated (i.e. number of bins or bin edges, etc.)
             "cut" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
+            TODO: This is a very hacky way to pass in a coarsening schema. There must be a better way.
         one_to_many : bool
             False limits the matches in a stratum to k:k
             True allows k:n matches in a stratum
 
         Returns
         -------
-        pd.DataFrame
+        pandas.DataFrame
             The residual imbalance for each covariate
         '''
         df = self._data_positive_weights(coarsening, one_to_many)
         return _univariate_imbalance(df, self.treatment, self.measure, self.bins)
 
     def match(self, coarsening: dict, one_to_many: bool = True) -> pd.Series:
-        ''' Perform coarsened exact matching using some coarsening schema and return the weights for each example
+        ''' Perform coarsened exact matching using some coarsening schema and return the weights for each observation
 
         Parameters
         ----------
@@ -125,18 +128,19 @@ class CEM:
             Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "cut"
             "bins" is the first parameter to the "cut" method stipulated (i.e. number of bins or bin edges, etc.)
             "cut" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
+            TODO: This is a very hacky way to pass in a coarsening schema. There must be a better way.
         one_to_many : bool
             False limits the matches in a stratum to k:k
             True allows k:n matches in a stratum
 
         Returns
         -------
-        pd.Series
-            The weight to use for each example of the provided data given the coarsening provided
+        pandas.Series
+            The weight to use for each observation of the provided data given the coarsening provided
         '''
         return match(self.data.drop(columns=self.outcome), self.treatment, coarsening, one_to_many)
 
-    def _find_H(self, lower, upper) -> int:
+    def _find_H(self, lower: int, upper: int) -> int:
         print('Calculating H, this may take a few minutes.')
         n_bins = range(lower, upper)
         imb = []
@@ -148,17 +152,17 @@ class CEM:
         imb = pd.Series(imb, index=n_bins)
         return (imb.sort_values(ascending=False) <= imb.quantile(.5)).idxmax()
 
-    def _data_positive_weights(self, coarsening, one_to_many) -> pd.DataFrame:
+    def _data_positive_weights(self, coarsening: dict, one_to_many: bool) -> pd.DataFrame:
         weights = self.match(coarsening, one_to_many)
         return self.data.drop(columns=self.outcome).loc[weights > 0, :]
 
 
-def match(data: pd.DataFrame, treatment: str, coarsening: dict, one_to_many=True) -> pd.Series:
+def match(data: pd.DataFrame, treatment: str, coarsening: dict, one_to_many: bool = True) -> pd.Series:
     '''Return weights for data given a coursening schema
 
     Parameters
     ----------
-    data : pd.DataFrame
+    data : pandas.DataFrame
         The data on which we shall perform coarsened exact matching
     treatment : str
         The name of the column in data containing the treatment variable
@@ -167,9 +171,15 @@ def match(data: pd.DataFrame, treatment: str, coarsening: dict, one_to_many=True
         Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "cut"
         "bins" is the first parameter to the "cut" method stipulated (i.e. number of bins or bin edges, etc.)
         "cut" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
+        TODO: This is a very hacky way to pass in a coarsening schema. There must be a better way.
     one_to_many : bool
         False limits the matches in a stratum to k:k
         True allows k:n matches in a stratum
+
+    Returns
+    -------
+    pandas.Series
+        The weight to use for each observation of the provided data given the coarsening provided
     '''
     # coarsen based on supplied coarsening schema
     data_ = coarsen(data.copy(), coarsening)
@@ -182,7 +192,7 @@ def match(data: pd.DataFrame, treatment: str, coarsening: dict, one_to_many=True
         # TODO: k:k matching using bhattacharya for each stratum, weight is 1 for the control and its treatment pair
 
 
-def _weight(data, treatment) -> pd.Series:
+def _weight(data: pd.DataFrame, treatment: str) -> pd.Series:
     '''Weight observations based on global and local (strata) treatment level populations'''
     # only keep stata with examples from each treatment level
     # if the treatment is continuous and was not coarsened, this will almost certainly
@@ -199,14 +209,14 @@ def _weight(data, treatment) -> pd.Series:
     return weights.add(prematched_weights, fill_value=0)
 
 
-def _weight_stratum(stratum, M) -> pd.Series:
+def _weight_stratum(stratum: pd.Series, M: pd.Series) -> pd.Series:
     '''Calculate weights for observations in an individual stratum'''
     ms = stratum.value_counts()  # local counts for levels of the treatment variable
     T = stratum.max()  # use as "under the policy" level
     return pd.Series([1 if c == T else (M[c] / M[T]) * (ms[T] / ms[c]) for _, c in stratum.iteritems()])
 
 
-def _cut(col, method, bins) -> pd.Series:
+def _cut(col: str, method, bins) -> pd.Series:
     '''Group values in a column into n bins using some Pandas method'''
     if method == 'qcut':
         return pd.qcut(col, q=bins, labels=False)

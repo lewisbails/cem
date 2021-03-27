@@ -7,19 +7,13 @@
 
 
 A Python implmentation of Coarsened Exact Matching (CEM).
-This is more or less based off the original R-package created by Iacus et al.
+This is a poor mans version of the original R-package [1].
+The L1 and L2 multivariate imbalance measures are implemented as described in [2].
 I make no claim to originality and thank the authors for their research.
-
-Original paper:
-https://gking.harvard.edu/files/abs/cem-plus-abs.shtml
-
-
-* Free software: MIT license
-* Documentation: https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io.
 
 
 Usage
---------
+---
 
 
 ```python
@@ -73,3 +67,18 @@ weights = c.match(schema)
 # ..perform weighted regression or weighted difference of means to find your treatment effect
 ```
 Note: Numbers in the example above are just for show.
+
+References
+---
+
+[1] Porro, Giuseppe & King, Gary & Iacus, Stefano. (2009). CEM: Software for Coarsened Exact Matching. Journal of Statistical Software. 30. 10.18637/jss.v030.i09.
+
+[2] Iacus, S. M., King, G., and Porro, G. Multivariate matching methods that are monotonic imbalance bounding. Journal of the American Statistical Association 106, 493 (2011 2011), 345–361.
+
+[3] Iacus, S. M., King, G., and Porro, G. Causal inference without balance checking: Coarsened exact matching. Political Analysis 20, 1 (2012), 1–24.
+
+[4] King, G., and Zeng, L. The dangers of extreme counterfactuals. Political Analysis 14 (2006), 131–159.
+
+[5] Ho, D., Imai, K., King, G., and Stuart, E. Matching as nonparametric preprocessing for reducing model dependence in parametric causal inference. Political Analysis 15 (2007), 199–236.
+
+(Unfinished) Documentation: https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io.
