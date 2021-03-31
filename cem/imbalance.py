@@ -2,97 +2,70 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
-from typing import Union
 from itertools import combinations
-from scipy.stats import ttest_ind
-from scipy.stats import chi2_contingency
+from pandas.api.types import is_numeric_dtype
 
 
-def imbalance(data: pd.DataFrame, treatment: str, measure: str, bins: Union[int, list[int], list[np.ndarray]]):
+def imbalance(data: pd.DataFrame, treatment: str, measure: str, weights: pd.Series = None):
     '''Evaluate multivariate imbalance of a set of observations'''
-    if measure in MEASURES:
-        return MEASURES[measure](data, treatment, bins)
+    if measure.lower() == 'l1':
+        return _L1(data, treatment, weights)
+    elif measure.lower() == 'l2':
+        return _L2(data, treatment, weights)
     else:
-        raise NotImplementedError(f'"{measure}" not a valid measure. Choose from {list(MEASURES.keys())}')
+        raise NotImplementedError(f'"{measure}" is not a valid multivariate imbalance measure (choose from l1 or l2)')
 
 
-def get_imbalance_params(data: pd.DataFrame, measure: str, continuous=None, H=5) -> list:
-    if continuous is None:
-        continuous = []
-    if measure == 'l1' or measure == 'l2':
-        return _bins_for_L(data, continuous, H)
-    else:
-        raise NotImplementedError('Only params for L variants imbalance available')
+def generate_imbalance_schema(data: pd.DataFrame, H=5) -> list[int]:
+    schema = {}
+    for i, x in data.items():
+        if is_numeric_dtype(x):
+            schema[i] = {'bins': min(x.nunique(), H), 'method': 'cut'}
+    return schema
 
 
-def _bins_for_L(data: pd.DataFrame, continuous: list[str], H: int):
-    def nbins(n, s): return min(s.nunique(), H) if n in continuous else s.nunique()
-    bin_edges = [np.histogram_bin_edges(x, bins=nbins(i, x)) for i, x in data.items()]
-    return bin_edges
+def _L1(data: pd.DataFrame, treatment: str, weights: pd.Series):
+    def func(l, r): return np.sum(np.abs(l / np.sum(l) - r / np.sum(r))) / 2
+    return _L(data, treatment, func, weights)
 
 
-def _univariate_imbalance(data: pd.DataFrame, treatment: str, measure: str, params):
-    marginal = {}
-    # it is assumed the elements of bins lines up with the data (minus the treatment column)
-    for col, bin_ in zip(data.drop(treatment, axis=1).columns, params):
-        cem_imbalance = imbalance(data.loc[:, [col, treatment]],
-                                  treatment, measure, [bin_])
-        d_treatment = data.loc[data[treatment] > 0, col]
-        d_control = data.loc[data[treatment] == 0, col]
-        if data[col].nunique() > 2:
-            stat = d_treatment.mean() - d_control.mean()
-            _, p = ttest_ind(d_treatment, d_control, equal_var=False)
-            type_ = 'diff'
-        else:  # binary variables
-            a = data[treatment]
-            b = data[col]
-            stat, p, _, _ = chi2_contingency(pd.crosstab(a, b))
-            type_ = 'Chi2'
-
-        q = [0, 0.25, 0.5, 0.75, 1]
-        diffs = d_treatment.quantile(
-            q) - d_control.quantile(q) if type_ == 'diff' else pd.Series([None] * len(q), index=q)
-        row = {'imbalance': cem_imbalance, 'measure': measure,
-               'statistic': stat, 'type': type_, 'P>|z|': p}
-        row.update({f'{int(i*100)}%': diffs[i] for i in q})
-        marginal[col] = pd.Series(row)
-    return pd.DataFrame.from_dict(marginal, orient='index')
+def _L2(data: pd.DataFrame, treatment: str, weights: pd.Series):
+    def func(l, r): return np.sqrt(np.sum((l / np.sum(l) - r / np.sum(r))**2)) / 2
+    return _L(data, treatment, func, weights)
 
 
-def _L1(data: pd.DataFrame, treatment: str, bins):
-    def func(l, r, m, n): return np.sum(np.abs(l / m - r / n)) / 2
-    return _L(data, treatment, bins, func)
-
-
-def _L2(data: pd.DataFrame, treatment: str, bins):
-    def func(l, r, m, n): return np.sqrt(np.sum((l / m - r / n)**2)) / 2
-    return _L(data, treatment, bins, func)
-
-
-def _L(data, treatment, bins, func):
+def _L(data: pd.DataFrame, treatment: str, func, weights: pd.Series = None):
     '''Evaluate multivariate Ln imbalance'''
-    groups = data.groupby(treatment).groups
-    data_ = data.drop(treatment, axis=1).copy()
-
-    try:
-        h = {}
-        for k, i in groups.items():
-            h[k] = np.histogramdd(data_.loc[i, :].to_numpy(), density=False, bins=bins)[0]
-        L = {}
-        for pair in map(dict, combinations(h.items(), 2)):
-            pair = OrderedDict(pair)
-            (k_left, k_right), (h_left, h_right) = pair.keys(), pair.values()  # 2 keys 2 histograms
-            L[tuple([k_left, k_right])] = func(h_left, h_right, len(groups[k_left]), len(groups[k_right]))
-
-    except Exception as e:
-        print(e)
-        return 1
+    df = data.drop(columns=treatment)
+    bin_labels = list(df.groupby(list(df.columns)).groups.keys())
+    if weights is None:
+        weights = pd.Series([1] * len(df), index=data.index)
+    bin_counts = {}
+    for treatment_level, treatment_group in data.groupby(treatment):
+        tg = treatment_group.drop(columns=treatment)
+        bin_counts[treatment_level] = tg.groupby(list(tg.columns)).apply(lambda g: weights.loc[g.index].sum()).to_dict()
+    L = {}
+    for (level_a, a_counts), (level_b, b_counts) in combinations(bin_counts.items(), 2):
+        a_counts_ = np.array([a_counts.get(k, 0) for k in bin_labels])
+        b_counts_ = np.array([b_counts.get(k, 0) for k in bin_labels])
+        L[(level_a, level_b)] = func(a_counts_, b_counts_)
     if len(L) == 1:
         return list(L.values())[0]
-    return L
+    return pd.DataFrame.from_records([k + (v,) for k, v in L.items()], columns=[f'{treatment}_level_a', f'{treatment}_level_b', 'imbalance'])
 
 
-MEASURES = {
-    'l1': _L1,
-    'l2': _L2,
-}
+def _cut(col: str, method, bins) -> pd.Series:
+    '''Group values in a column into n bins using some Pandas method'''
+    if method == 'qcut':
+        return pd.qcut(col, q=bins, labels=False)
+    elif method == 'cut':
+        return pd.cut(col, bins=bins, labels=False)
+    else:
+        raise Exception(
+            f'"{method}" not supported. Coarsening only possible with "cut" and "qcut".')
+
+
+def coarsen(data: pd.DataFrame, coarsening: dict) -> pd.DataFrame:
+    '''Coarsen data based on schema'''
+    df_coarse = data.apply(lambda x: _cut(x, coarsening[x.name]['method'], coarsening[x.name]['bins']) if x.name in coarsening else x, axis=0)
+    return df_coarse
