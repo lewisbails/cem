@@ -6,9 +6,6 @@ import pandas as pd
 
 from .imbalance import imbalance, generate_imbalance_schema, coarsen
 
-__author__ = "Lewis Bails <lewis.bails@gmail.com>"
-__version__ = "0.1.3"
-
 
 class CEM:
     '''Coarsened Exact Matching

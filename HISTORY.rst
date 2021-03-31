@@ -17,3 +17,8 @@ History
 
 * Remove modelling code
 
+0.1.4 (2021-03-31)
+------------------
+
+* Bug fixes and a better README
+

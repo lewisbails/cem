@@ -8,15 +8,9 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
 
 requirements = [
-    'pandas>=1.0',
-    'scipy>=1.4',
-    'numpy>=1.18',
-    'tqdm>=4.46',
+    'pandas',
+    'numpy',
 ]
-
-setup_requirements = []
-
-test_requirements = []
 
 setup(
     author="Lewis Bails",
@@ -40,10 +34,8 @@ setup(
     keywords='cem',
     name='cem',
     packages=find_packages(include=['cem', 'cem.*']),
-    setup_requires=setup_requirements,
     test_suite='tests',
-    tests_require=test_requirements,
     url='https://github.com/lewisbails/cem',
-    version='0.1.3',
+    version='0.1.4',
     zip_safe=False,
 )
