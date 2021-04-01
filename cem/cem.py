@@ -1,14 +1,10 @@
-'''Coarsened exact matching for causal inference'''
-
-from __future__ import absolute_import
-
 import pandas as pd
-
 from .imbalance import imbalance, generate_imbalance_schema, coarsen
 
-
 class CEM:
-    '''Coarsened Exact Matching
+    '''
+    The CEM class allows users to experiment with different coarsening schemas on a single DataFrame.
+    The "imbalance" and "match" methods return the multivariate imbalance (pre or post matching) and individual observation weights post-matching, respectively.
 
     Parameters
     ----------
@@ -24,17 +20,21 @@ class CEM:
         (i.e. The integer value between lower_H and upper_H that produced the median L1 imbalance)
     measure : str, optional
         Multivariate imbalance measure to use (only L1 and L2 imbalance supported)
+    lower_H : int, optional
+        If H is not provided, the lower end of the range for the automatic H search.
+    upper_H : int, optional
+        If H is not provided, the upper end of the range for the automatic H search.
 
     Attributes
     ---------
-    data, treatment, outcome, continuous, H: see Parameters
+    data : pandas.DataFrame
+    treatment : str
+    outcome : str
+    H : int
     imbalance_schema : dict
-        Coarsening schema used to calculate multivariate imbalance
-    pre_coarsening_imbalance : float
-        The multidimensional imbalance of the data prior to matching
+        Independent coarsening schema used to calculate multivariate imbalance (pre or post matching)
     measure : str
         Multivariate imbalance measure
-
     '''
 
     def __init__(self,
@@ -67,7 +67,6 @@ class CEM:
             Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "method"
             "bins" is the first parameter to the binning method stipulated (i.e. number of bins or bin edges, etc.)
             "method" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
-            TODO: This is a very hacky way to pass in a coarsening schema. There must be a better way.
 
         Returns
         -------
@@ -88,7 +87,6 @@ class CEM:
             Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "method"
             "bins" is the first parameter to the binning method stipulated (i.e. number of bins or bin edges, etc.)
             "method" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
-            TODO: This is a very hacky way to pass in a coarsening schema. There must be a better way.
 
         Returns
         -------
@@ -128,7 +126,6 @@ def match(data: pd.DataFrame, treatment: str, coarsening: dict) -> pd.Series:
         Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "method"
         "bins" is the first parameter to the binning method stipulated (i.e. number of bins or bin edges, etc.)
         "method" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
-        TODO: This is a very hacky way to pass in a coarsening schema. There must be a better way.
 
     Returns
     -------
