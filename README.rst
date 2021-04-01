@@ -1,9 +1,24 @@
-===============================
-Welcome to cem's documentation!
-===============================
+==================================================
+cem: Coarsened Exact Matching for Causal Inference
+==================================================
 
-cem is a Python micro-library implementing Coarsened Exact Matching (CEM) for causal inference.
-This is a poor mans version of the original R-package [1].
+.. image:: https://img.shields.io/pypi/v/cem.svg
+   :target: https://pypi.org/project/cem/
+   :alt: pypi
+
+
+.. image:: https://img.shields.io/travis/lewisbails/cem.svg
+   :target: https://travis-ci.com/lewisbails/cem
+   :alt: build
+
+
+.. image:: https://readthedocs.org/projects/cem-coarsened-exact-matching-for-causal-inference/badge/?version=latest
+   :target: https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io/en/latest/?badge=latest
+   :alt: docs
+
+cem is a lightweight library for Coarsened Exact Matching (CEM) and is essentially a poor man's version of the original R-package [1].
+CEM is a matching technique used to reduce covariate imbalance which would otherwise lead to treatment effect estimates that are sensitive to model specification.
+By removing and/or reweighting certain observations via CEM, one can arrive at treatment effect estimates that are more stable than those found using other matching techniques like propensity score matching.
 The L1 and L2 multivariate imbalance measures are implemented as described in [2].
 I make no claim to originality and thank the authors for their research.
 

@@ -1,9 +1,9 @@
-.. include:: README.rst
+.. include:: ../README.rst
 
 .. toctree::
    :hidden:
    :maxdepth: 2
-   :caption: Getting started
+   :caption: Contents
 
    install
    api
