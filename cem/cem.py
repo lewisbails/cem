@@ -1,6 +1,7 @@
 import pandas as pd
 from .imbalance import imbalance, generate_imbalance_schema, coarsen
 
+
 class CEM:
     '''
     The CEM class allows users to experiment with different coarsening schemas on a single DataFrame.

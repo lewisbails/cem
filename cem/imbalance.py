@@ -24,12 +24,14 @@ def generate_imbalance_schema(data: pd.DataFrame, H=5) -> list[int]:
 
 
 def _L1(data: pd.DataFrame, treatment: str, weights: pd.Series):
-    def func(l, r): return np.sum(np.abs(l / np.sum(l) - r / np.sum(r))) / 2
+    def func(l, r):
+        return np.sum(np.abs(l / np.sum(l) - r / np.sum(r))) / 2
     return _L(data, treatment, func, weights)
 
 
 def _L2(data: pd.DataFrame, treatment: str, weights: pd.Series):
-    def func(l, r): return np.sqrt(np.sum((l / np.sum(l) - r / np.sum(r))**2)) / 2
+    def func(l, r):
+        return np.sqrt(np.sum((l / np.sum(l) - r / np.sum(r))**2)) / 2
     return _L(data, treatment, func, weights)
 
 
