@@ -22,10 +22,7 @@ By removing and/or reweighting certain observations via CEM, one can arrive at t
 The L1 and L2 multivariate imbalance measures are implemented as described in [2].
 I make no claim to originality and thank the authors for their research.
 
-Get the code
--------------
-
-The `source <http://github.com/lewisbails/cem>`_ is available on Github. If you would like to contribute, please checkout the link in the sidebar.
+Get the `code <http://github.com/lewisbails/cem>`_, read the `docs <https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io/>`_, or `contribute <https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io/en/latest/contributing.html>`_!
 
 Usage
 -----
