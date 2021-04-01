@@ -6,11 +6,9 @@ cem: Coarsened Exact Matching for Causal Inference
    :target: https://pypi.org/project/cem/
    :alt: pypi
 
-
-.. image:: https://img.shields.io/travis/lewisbails/cem.svg
+.. image:: https://travis-ci.com/lewisbails/cem.svg?branch=master
    :target: https://travis-ci.com/lewisbails/cem
-   :alt: build
-
+   :alt: travisci
 
 .. image:: https://readthedocs.org/projects/cem-coarsened-exact-matching-for-causal-inference/badge/?version=latest
    :target: https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io/en/latest/?badge=latest
