@@ -36,6 +36,6 @@ setup(
     packages=find_packages(include=['cem', 'cem.*']),
     test_suite='tests',
     url='https://github.com/lewisbails/cem',
-    version='0.1.4',
+    version='0.1.5',
     zip_safe=False,
 )

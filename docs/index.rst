@@ -1,18 +1,11 @@
-Welcome to cem's documentation!
-===============================
-
-.. automodule:: cem
-   :members:
+.. include:: README.rst
 
 .. toctree::
+   :hidden:
    :maxdepth: 2
+   :caption: Getting started
 
-   readme
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   install
+   api
+   contributing
+   history

@@ -12,6 +12,7 @@
 #
 import os
 import sys
+import cem
 sys.path.insert(0, os.path.abspath('..'))
 
 
@@ -20,7 +21,8 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'cem'
 copyright = '2021, Lewis Bails'
 author = 'Lewis Bails'
-
+version = cem.__version__
+release = cem.__version__
 
 # -- General configuration ---------------------------------------------------
 

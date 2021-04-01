@@ -22,3 +22,8 @@ History
 
 * Bug fixes and a better README
 
+0.1.5 (2021-04-1)
+------------------
+
+* Fixing up Read The Docs
+

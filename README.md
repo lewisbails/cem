@@ -1,15 +1,11 @@
-# cem
+# cem - Coarsened Exact Matching for Causal Inference
 
 [![pypi](https://img.shields.io/pypi/v/cem.svg)](https://pypi.org/project/cem/)
 [![build](https://img.shields.io/travis/lewisbails/cem.svg)](https://travis-ci.com/lewisbails/cem)
 [![docs](https://readthedocs.org/projects/cem-coarsened-exact-matching-for-causal-inference/badge/?version=latest)](https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io/en/latest/?badge=latest)
 
 
-
-A Python implmentation of Coarsened Exact Matching (CEM).
-This is a poor mans version of the original R-package [1].
-The L1 and L2 multivariate imbalance measures are implemented as described in [2].
-I make no claim to originality and thank the authors for their research.
+cem is a Python micro-library implementing Coarsened Exact Matching (CEM) for causal inference. This is a poor mans version of the original R-package [1]. The L1 and L2 multivariate imbalance measures are implemented as described in [2]. I make no claim to originality and thank the authors for their research.
 
 
 Usage
@@ -101,4 +97,4 @@ References
 
 [5] Ho, D., Imai, K., King, G., and Stuart, E. Matching as nonparametric preprocessing for reducing model dependence in parametric causal inference. Political Analysis 15 (2007), 199–236.
 
-(Unfinished) Documentation: https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io.
+Documentation: https://cem-coarsened-exact-matching-for-causal-inference.readthedocs.io.
