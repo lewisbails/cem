@@ -52,8 +52,8 @@ Usage
    # schema are dicts where keys are column names and values are tuples of (panda cut function name, function kwargs)
    schema = {
       'CRIM': ('cut', {'bins': 4}),
-      'ZN': ('cut', {'bins': 4}),
-      'INDUS': ('cut', {'bins': 4}),
+      'ZN': ('qcut', {'q': 4}),
+      'INDUS': ('qcut', {'q': 4}),
       'NOX': ('cut', {'bins': 5}),
       'RM': ('cut', {'bins': 5}),
       'AGE': ('cut', {'bins': 5}),
