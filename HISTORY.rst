@@ -22,8 +22,10 @@ History
 
 * Bug fixes and a better README
 
-0.1.5 (2021-04-1)
+0.1.5 (2021-04-02)
 ------------------
 
 * Fixing up Read The Docs
+* Change how schema are built
+* Use weights when calculating multivariate imbalance
 

@@ -1,5 +1,6 @@
+from __future__ import annotations
 import pandas as pd
-from .imbalance import imbalance, generate_imbalance_schema, coarsen
+from .imbalance import _imbalance, _generate_imbalance_schema, _coarsen
 
 
 class CEM:
@@ -52,10 +53,8 @@ class CEM:
         self.measure = measure
         if H:
             self.H = H
-            self.imbalance_schema = generate_imbalance_schema(self.data.drop(columns=[self.treatment, self.outcome]), self.H)
+            self.imbalance_schema = _generate_imbalance_schema(self.data.drop(columns=[self.treatment, self.outcome]), self.H)
         else:
-            if self.data[treatment].nunique() > 2:
-                raise ValueError('Unable to automatically find H if there are more than 2 treatment levels')
             self.H, self.imbalance_schema = self._find_H_and_schema(lower_H, upper_H)
 
     def imbalance(self, coarsening: dict = None) -> float:
@@ -65,18 +64,18 @@ class CEM:
         ----------
         coarsening : dict
             Defines the strata. If None, the returned value is the imbalance prior to performing CEM.
-            Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "method"
-            "bins" is the first parameter to the binning method stipulated (i.e. number of bins or bin edges, etc.)
-            "method" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
+            Keys are the covariate/column names and values are tuples of (func, kwargs).
+            "func" is the name of the Pandas function to use for grouping the covariate (only "cut" and "qcut" are supported)
+            "kwargs" is a dict of arguments to be passed to the Pandas cut function (along with the covariate data)
 
         Returns
         -------
         float
             The residual imbalance
         '''
-        weights = (self.match(coarsening) > 0).astype(int) if coarsening else None
-        df = coarsen(self.data, self.imbalance_schema)
-        return imbalance(df.drop(columns=self.outcome), self.treatment, self.measure, weights)
+        weights = self.match(coarsening) if coarsening else None
+        df = _coarsen(self.data, self.imbalance_schema)
+        return _imbalance(df.drop(columns=self.outcome), self.treatment, self.measure, weights)
 
     def match(self, coarsening: dict = None) -> pd.Series:
         ''' Perform coarsened exact matching using some coarsening schema and return the weights for each observation
@@ -84,10 +83,10 @@ class CEM:
         Parameters
         ----------
         coarsening : dict
-            Defines the strata.
-            Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "method"
-            "bins" is the first parameter to the binning method stipulated (i.e. number of bins or bin edges, etc.)
-            "method" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
+            Defines the strata. If None, the returned value is the imbalance prior to performing CEM.
+            Keys are the covariate/column names and values are tuples of (func, kwargs).
+            "func" is the name of the Pandas function to use for grouping the covariate (only "cut" and "qcut" are supported)
+            "kwargs" is a dict of arguments to be passed to the Pandas cut function (along with the covariate data)
 
         Returns
         -------
@@ -96,7 +95,7 @@ class CEM:
         '''
         if coarsening is None:
             coarsening = self.imbalance_schema
-        return match(self.data.drop(columns=self.outcome), self.treatment, coarsening)
+        return _match(self.data.drop(columns=self.outcome), self.treatment, coarsening)
 
     def _find_H_and_schema(self, lower: int, upper: int):
         print('Calculating H, this may take a few minutes.')
@@ -104,16 +103,19 @@ class CEM:
         imb = {}
         df = self.data.drop(columns=self.outcome)
         for H in n_bins:
-            imbalance_schema = generate_imbalance_schema(df.drop(columns=self.treatment), H)
-            df_coarse = coarsen(df, imbalance_schema)
-            imb_h = imbalance(df_coarse, self.treatment, self.measure)
+            imbalance_schema = _generate_imbalance_schema(df.drop(columns=self.treatment), H)
+            df_coarse = _coarsen(df, imbalance_schema)
+            imb_h = _imbalance(df_coarse, self.treatment, self.measure)
+            if isinstance(imb_h, pd.DataFrame):
+                # use the mean imbalance considering all treatment level pairs
+                imb_h = imb_h['imbalance'].mean()
             imb[H] = [imb_h, imbalance_schema]
         imb = pd.DataFrame.from_dict(imb, orient='index', columns=['imbalance', 'schema'])
         H = (imb['imbalance'].sort_values(ascending=False) <= imb['imbalance'].quantile(.5)).idxmax()
         return H, imb.loc[H, 'schema']
 
 
-def match(data: pd.DataFrame, treatment: str, coarsening: dict) -> pd.Series:
+def _match(data: pd.DataFrame, treatment: str, coarsening: dict) -> pd.Series:
     '''Return weights for data given a coursening schema
 
     Parameters
@@ -123,10 +125,10 @@ def match(data: pd.DataFrame, treatment: str, coarsening: dict) -> pd.Series:
     treatment : str
         The name of the column in data containing the treatment variable
     coarsening : dict
-        Defines the strata.
-        Keys are the covariate/column names and values are dict's themselves with keys of "bins" and "method"
-        "bins" is the first parameter to the binning method stipulated (i.e. number of bins or bin edges, etc.)
-        "method" is the Pandas method to use for grouping the covariate (only "cut" and "qcut" supported)
+        Defines the strata. If None, the returned value is the imbalance prior to performing CEM.
+        Keys are the covariate/column names and values are tuples of (func, kwargs).
+        "func" is the name of the Pandas function to use for grouping the covariate (only "cut" and "qcut" are supported)
+        "kwargs" is a dict of arguments to be passed to the Pandas cut function (along with the covariate data)
 
     Returns
     -------
@@ -134,7 +136,7 @@ def match(data: pd.DataFrame, treatment: str, coarsening: dict) -> pd.Series:
         The weight to use for each observation of the provided data given the coarsening provided
     '''
     # coarsen based on supplied coarsening schema
-    df_coarse = coarsen(data, coarsening)
+    df_coarse = _coarsen(data, coarsening)
 
     # weight data in non-empty strata
     return _weight(df_coarse, treatment)
@@ -145,22 +147,22 @@ def _weight(data: pd.DataFrame, treatment: str) -> pd.Series:
     # only keep stata with examples from each treatment level
     # if the treatment is continuous and was not coarsened, this will almost certainly
     # result in 0 weight for all examples
-    gb = list(data.drop(treatment, axis=1).columns)
+    gb = list(data.drop(columns=treatment).columns)
     prematched_weights = pd.Series([0] * len(data), index=data.index)
-    matched = data.groupby(gb).filter(lambda x: len(x[treatment].unique()) == len(data[treatment].unique()))
+    matched = data.groupby(gb).filter(lambda x: x[treatment].nunique() == data[treatment].nunique())
     if not len(matched):
         # no strata had all levels of the treatment variable
         return prematched_weights
-    global_counts = matched[treatment].value_counts()
-    weights = pd.concat([_weight_stratum(g[treatment], global_counts) for _, g in matched.groupby(gb)])
+    matched_counts = matched[treatment].value_counts()
+    weights = pd.concat([_weight_stratum(stratum[treatment], matched_counts) for _, stratum in matched.groupby(gb)])
     weights = weights.add(prematched_weights, fill_value=0)
     weights.name = 'weights'
     return weights
 
 
-def _weight_stratum(stratum: pd.Series, M: pd.Series) -> pd.Series:
+def _weight_stratum(treatment_levels: pd.Series, M: pd.Series) -> pd.Series:
     '''Calculate weights for observations in an individual stratum'''
-    ms = stratum.value_counts()  # local counts for levels of the treatment variable
-    T = stratum.max()  # use as "under the policy" level
-    stratum_weights = pd.Series([1 if c == T else (M[c] / M[T]) * (ms[T] / ms[c]) for _, c in stratum.iteritems()], index=stratum.index)
+    ms = treatment_levels.value_counts()  # local counts for levels of the treatment variable
+    T = treatment_levels.max()  # use as "under the policy" level
+    stratum_weights = pd.Series([1 if t == T else (M[t] / M[T]) * (ms[T] / ms[t]) for t in treatment_levels], index=treatment_levels.index)
     return stratum_weights

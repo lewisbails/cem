@@ -49,49 +49,53 @@ Usage
 
    c = CEM(df, "CHAS", "MEDV")
 
-   # "bins" can be an int (number of quantiles or equal width bins) or sequence of scalars (quantiles for "qcut" or bin edges for "cut")
-   schema = {'CRIM': {'bins': 3, 'method': 'qcut'},
-             'ZN': {'bins': 4, 'method': 'cut'},
-             'INDUS': {'bins': 4, 'method': 'cut'},
-             'NOX': {'bins': 4, 'method': 'cut'},
-             'RM': {'bins': 4, 'method': 'cut'},
-             'AGE': {'bins': 5, 'method': 'cut'},
-             'DIS': {'bins': 5, 'method': 'cut'},
-             'RAD': {'bins': 6, 'method': 'cut'},
-             'TAX': {'bins': 4, 'method': 'cut'},
-             'PTRATIO': {'bins': 5, 'method': 'cut'},
-             'B': {'bins': 3, 'method': 'cut'},
-             'LSTAT': {'bins': 2, 'method': 'cut'}}
+   # schema are dicts where keys are column names and values are tuples of (panda cut function name, function kwargs)
+   schema = {
+      'CRIM': ('cut', {'bins': 4}),
+      'ZN': ('cut', {'bins': 4}),
+      'INDUS': ('cut', {'bins': 4}),
+      'NOX': ('cut', {'bins': 5}),
+      'RM': ('cut', {'bins': 5}),
+      'AGE': ('cut', {'bins': 5}),
+      'DIS': ('cut', {'bins': 5}),
+      'RAD': ('cut', {'bins': 6}),
+      'TAX': ('cut', {'bins': 5}),
+      'PTRATIO': ('cut', {'bins': 6}),
+      'B': ('cut', {'bins': 5}),
+      'LSTAT': ('cut', {'bins': 5})
+      }
 
-   # Check the multidimensional (L2) imbalance before and after matching
+   # Check the multidimensional (L1) imbalance before and after matching
    c.imbalance() # 0.96
-   c.imbalance(schema) # 0.67
+   c.imbalance(schema) # 0.60
 
    # Get the weights for each example after matching using the coarsening schema
    weights = c.match(schema)
    weights[weights > 0]
-
-   +-----+----------+
-   |     |  weights |
-   +=====+==========+
-   | 142 | 1        |
-   +-----+----------+
-   | 143 | 0.504762 |
-   +-----+----------+
-   | 144 | 0.504762 |
-   +-----+----------+
-   | 147 | 0.504762 |
-   +-----+----------+
-   | 148 | 0.504762 |
-   +-----+----------+
-   | 149 | 0.504762 |
-   +-----+----------+
-   | 150 | 1.2619   |
-   +-----+----------+
-   | 151 | 1.2619   |
-   +-----+----------+
-   | 154 | 1        |
-   +-----+----------+
+      
+   +-----+-----------+
+   |     |   weights |
+   +=====+===========+
+   |   1 |  1.25     |
+   +-----+-----------+
+   |   2 |  2.5      |
+   +-----+-----------+
+   |  96 |  1.25     |
+   +-----+-----------+
+   | 142 |  1        |
+   +-----+-----------+
+   | 143 |  0.625    |
+   +-----+-----------+
+   | 144 |  0.625    |
+   +-----+-----------+
+   | 147 |  0.625    |
+   +-----+-----------+
+   | 148 |  0.625    |
+   +-----+-----------+
+   | 150 |  2.5      |
+   +-----+-----------+
+   | 151 |  2.5      |
+   +-----+-----------+
    ...
 
 
