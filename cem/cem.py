@@ -51,6 +51,7 @@ class CEM:
         self.treatment = treatment
         self.outcome = outcome
         self.measure = measure
+        self.weights = None
         if H:
             self.H = H
             self.imbalance_schema = _generate_imbalance_schema(self.data.drop(columns=[self.treatment, self.outcome]), self.H)
@@ -73,7 +74,7 @@ class CEM:
         float
             The residual imbalance
         '''
-        weights = self.match(coarsening) if coarsening else None
+        self.weights = self.match(coarsening) if coarsening else None
         df = _coarsen(self.data, self.imbalance_schema)
         return _imbalance(df.drop(columns=self.outcome), self.treatment, self.measure, weights)
 
@@ -95,7 +96,8 @@ class CEM:
         '''
         if coarsening is None:
             coarsening = self.imbalance_schema
-        return _match(self.data.drop(columns=self.outcome), self.treatment, coarsening)
+        self.weights = _match(self.data.drop(columns=self.outcome), self.treatment, coarsening)
+        return self.weights
 
     def _find_H_and_schema(self, lower: int, upper: int):
         print('Calculating H, this may take a few minutes.')
