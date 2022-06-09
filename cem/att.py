@@ -1,17 +1,18 @@
 import statsmodels.api as sm
 import pandas as pd
 
-from .cem import CEM
 
-
-def att_wls(cem: CEM, treatment: str, outcome: str) -> sm.regression.linear_model.RegressionResults:
+def att_wls(data: pd.DataFrame, weights: pd.Series, treatment: str,
+            outcome: str) -> sm.regression.linear_model.RegressionResults:
     '''
     Takes a CEM object and generates an estimated treatment effect using statsmodels WLS
 
     Parameters
     ----------
-    cem : CEM
-        A CEM object that has been through matching and contains weights
+    data : pd.DataFrame
+        A pandas DataFrame of data (input for CEM)
+    weights : pd.Series
+        A pandas Series of weights (as returned by the CEM matching function)
     treatment : str
         Name of column in dataframe containing the treatment variable
     outcome : str
@@ -22,22 +23,24 @@ def att_wls(cem: CEM, treatment: str, outcome: str) -> sm.regression.linear_mode
     A statsmodel RegressionResults object
     '''
 
-    X = cem.data[treatment]
-    Y = cem.data[outcome]
+    X = data[treatment]
+    Y = data[outcome]
 
     X = sm.add_constant(X)
 
-    mod = sm.WLS(Y, X, weights=cem.weights)
+    mod = sm.WLS(Y, X, weights=weights)
     return mod.fit()
 
 
-def att_weighted_mean(cem: CEM, treatment: str, outcome: str) -> pd.DataFrame:
+def att_weighted_mean(data: pd.DataFrame, weights: pd.Series, treatment: str, outcome: str) -> pd.DataFrame:
     '''
 
     Parameters
     ----------
-    cem : CEM
-        A CEM object that has been through matching and contains weights
+    data : pd.DataFrame
+        A pandas DataFrame of data (input for CEM)
+    weights : pd.Series
+        A pandas Series of weights (as returned by the CEM matching function)
     treatment : str
         Name of column in dataframe containing the treatment variable
     outcome : str
@@ -49,6 +52,6 @@ def att_weighted_mean(cem: CEM, treatment: str, outcome: str) -> pd.DataFrame:
 
     '''
 
-    tmp = cem.data.copy()
-    tmp['weighted_outcome'] = cem.weights * tmp[outcome]
+    tmp = data.copy()
+    tmp['weighted_outcome'] = weights * tmp[outcome]
     return tmp.groupby(treatment).agg({'weighted_outcome': 'mean'})

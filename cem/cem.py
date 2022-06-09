@@ -51,10 +51,10 @@ class CEM:
         self.treatment = treatment
         self.outcome = outcome
         self.measure = measure
-        self.weights = None
         if H:
             self.H = H
-            self.imbalance_schema = _generate_imbalance_schema(self.data.drop(columns=[self.treatment, self.outcome]), self.H)
+            self.imbalance_schema = _generate_imbalance_schema(self.data.drop(columns=[self.treatment, self.outcome]),
+                                                               self.H)
         else:
             self.H, self.imbalance_schema = self._find_H_and_schema(lower_H, upper_H)
 
@@ -74,7 +74,7 @@ class CEM:
         float
             The residual imbalance
         '''
-        self.weights = self.match(coarsening) if coarsening else None
+        weights = self.match(coarsening) if coarsening else None
         df = _coarsen(self.data, self.imbalance_schema)
         return _imbalance(df.drop(columns=self.outcome), self.treatment, self.measure, weights)
 
@@ -96,8 +96,7 @@ class CEM:
         '''
         if coarsening is None:
             coarsening = self.imbalance_schema
-        self.weights = _match(self.data.drop(columns=self.outcome), self.treatment, coarsening)
-        return self.weights
+        return _match(self.data.drop(columns=self.outcome), self.treatment, coarsening)
 
     def _find_H_and_schema(self, lower: int, upper: int):
         print('Calculating H, this may take a few minutes.')
@@ -166,5 +165,6 @@ def _weight_stratum(treatment_levels: pd.Series, M: pd.Series) -> pd.Series:
     '''Calculate weights for observations in an individual stratum'''
     ms = treatment_levels.value_counts()  # local counts for levels of the treatment variable
     T = treatment_levels.max()  # use as "under the policy" level
-    stratum_weights = pd.Series([1 if t == T else (M[t] / M[T]) * (ms[T] / ms[t]) for t in treatment_levels], index=treatment_levels.index)
+    stratum_weights = pd.Series([1 if t == T else (M[t] / M[T]) * (ms[T] / ms[t]) for t in treatment_levels],
+                                index=treatment_levels.index)
     return stratum_weights
