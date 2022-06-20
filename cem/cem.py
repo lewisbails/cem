@@ -53,7 +53,8 @@ class CEM:
         self.measure = measure
         if H:
             self.H = H
-            self.imbalance_schema = _generate_imbalance_schema(self.data.drop(columns=[self.treatment, self.outcome]), self.H)
+            self.imbalance_schema = _generate_imbalance_schema(self.data.drop(columns=[self.treatment, self.outcome]),
+                                                               self.H)
         else:
             self.H, self.imbalance_schema = self._find_H_and_schema(lower_H, upper_H)
 
@@ -164,5 +165,6 @@ def _weight_stratum(treatment_levels: pd.Series, M: pd.Series) -> pd.Series:
     '''Calculate weights for observations in an individual stratum'''
     ms = treatment_levels.value_counts()  # local counts for levels of the treatment variable
     T = treatment_levels.max()  # use as "under the policy" level
-    stratum_weights = pd.Series([1 if t == T else (M[t] / M[T]) * (ms[T] / ms[t]) for t in treatment_levels], index=treatment_levels.index)
+    stratum_weights = pd.Series([1 if t == T else (M[t] / M[T]) * (ms[T] / ms[t]) for t in treatment_levels],
+                                index=treatment_levels.index)
     return stratum_weights

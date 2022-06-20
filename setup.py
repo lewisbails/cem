@@ -9,7 +9,7 @@ README = (HERE / "README.rst").read_text()
 
 requirements = [
     'pandas',
-    'numpy',
+    'numpy', 'statsmodels'
 ]
 
 setup(
