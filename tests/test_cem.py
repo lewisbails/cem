@@ -15,7 +15,15 @@ df = pd.DataFrame(
         "Y": np.random.randint(0, 2, size, dtype=bool),
     }
 )
-schema = {}
+
+schema = {
+    "float": ('cut', {'bins': 4}),
+    "int": ('qcut', {'q': 4}),
+}
+
+schema_missing_cont = {
+    "int": ('cut', {'bins': 4}),
+}
 
 
 @pytest.mark.parametrize(
@@ -36,3 +44,5 @@ def test_CEM(treatment, H, outcome):
     with outcome:
         c = CEM(df, treatment, "Y", H)
         c.imbalance()
+        c.imbalance(schema)
+        c.imbalance(schema_missing_cont)
