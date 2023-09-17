@@ -55,7 +55,7 @@ jobs:
         run: |
           poetry run pytest --cov=cem --cov-report=term --cov-fail-under=80
 
-test-3.11:
+  test-3.11:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
