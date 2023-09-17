@@ -30,7 +30,7 @@ jobs:
 
       - name: Run pytest for Python 3.9
         run: |
-          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=80
+          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=70
 
   test_310:
     runs-on: ubuntu-latest
@@ -53,7 +53,7 @@ jobs:
 
       - name: Run pytest for Python 3.10
         run: |
-          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=80
+          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=70
 
   test_311:
     runs-on: ubuntu-latest

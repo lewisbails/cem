@@ -7,6 +7,7 @@ from cem.imbalance import _imbalance, _generate_imbalance_schema, _coarsen
 class CEM:
     """
     Allows users to experiment with different coarsening schemas on a single DataFrame.
+
     The "imbalance" and "match" methods return the multivariate imbalance (pre or post matching) and individual observation weights post-matching, respectively.
 
     Parameters
