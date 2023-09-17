@@ -200,10 +200,23 @@ def _weight(data: pd.DataFrame, treatment: str) -> pd.Series:
     return weights
 
 
-def _weight_stratum(treatment_levels: pd.Series, M: pd.Series) -> pd.Series:
-    """Calculate weights for observations in an individual stratum"""
+def _weight_stratum(treatment_levels: pd.Series, matches_by_level: pd.Series) -> pd.Series:
+    """
+    Calculate weights for observations in an individual stratum
+
+    Parameters
+    ----------
+    treatment_levels : pandas.Series
+        Treatment level for each observation
+    matches_by_level : pandas.Series
+        Total number of matches for each level
+    """
+    M = matches_by_level
     ms = treatment_levels.value_counts()  # local counts for levels of the treatment variable
-    T = treatment_levels.max()  # use as "under the policy" level
+    if treatment_levels.dtype == "category":
+        T = treatment_levels.as_ordered().max()  # use as "under the policy" level
+    else:
+        T = treatment_levels.max()  # use as "under the policy" level
     stratum_weights = pd.Series(
         [1 if t == T else (M[t] / M[T]) * (ms[T] / ms[t]) for t in treatment_levels],
         index=treatment_levels.index,
