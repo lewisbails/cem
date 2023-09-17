@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "cem"
+version = "0.1.6"
+description = "Coarsened Exact Matching for Causal Inference"
+authors = ["Lewis Bails <lewis.bails@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+pandas = "^2.1.0"
+numpy = "^1.26.0"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.2"
+pytest-cov = "^4.1.0"
+
+[tool.poetry.group.style]
+optional = true
+
+[tool.poetry.group.style.dependencies]
+flake8 = "^6.1.0"
+flake8-pyproject = "^1.2.3"
+flake8-docstrings = "^1.7.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.9.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 200
+
+[tool.flake8]
+include = ["cem" , "tests"]
+exclude = [".git" , "__pycache__", "venv", "__init__.py"]
+ignore = ["D400", "W"]
+count = true
+show-source = true
+statistics = true
+max-line-length = 200
+docstring-convention = "numpy"
