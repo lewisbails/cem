@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  test-3.9:
+  test_39:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -32,7 +32,7 @@ jobs:
         run: |
           poetry run pytest --cov=cem --cov-report=term --cov-fail-under=80
 
-  test-3.10:
+  test_310:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -55,7 +55,7 @@ jobs:
         run: |
           poetry run pytest --cov=cem --cov-report=term --cov-fail-under=80
 
-  test-3.11:
+  test_311:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
