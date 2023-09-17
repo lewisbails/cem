@@ -1,7 +1,10 @@
+"""Multivariate imbalance module"""
 from __future__ import annotations
+from itertools import combinations
+from typing import Callable
+
 import numpy as np
 import pandas as pd
-from itertools import combinations
 from pandas.api.types import is_numeric_dtype
 
 
@@ -15,7 +18,7 @@ def _imbalance(data: pd.DataFrame, treatment: str, measure: str, weights: pd.Ser
         raise NotImplementedError(f'"{measure}" is not a valid multivariate imbalance measure (choose from l1 or l2)')
 
 
-def _generate_imbalance_schema(data: pd.DataFrame, H=5) -> list[int]:
+def _generate_imbalance_schema(data: pd.DataFrame, H: int = 5) -> list[int]:
     schema = {}
     for i, x in data.items():
         if is_numeric_dtype(x):
@@ -24,20 +27,20 @@ def _generate_imbalance_schema(data: pd.DataFrame, H=5) -> list[int]:
 
 
 def _L1(data: pd.DataFrame, treatment: str, weights: pd.Series):
-    def func(l, r):
-        return np.sum(np.abs(l / np.sum(l) - r / np.sum(r))) / 2
+    def func(tensor_a: np.ndarray, tensor_b: np.ndarray):
+        return np.sum(np.abs(tensor_a / np.sum(tensor_a) - tensor_b / np.sum(tensor_b))) / 2
 
     return _L(data, treatment, func, weights)
 
 
 def _L2(data: pd.DataFrame, treatment: str, weights: pd.Series):
-    def func(l, r):
-        return np.sum(np.sqrt((l / np.sum(l) - r / np.sum(r)) ** 2)) / 2
+    def func(tensor_a: np.ndarray, tensor_b: np.ndarray):
+        return np.sum(np.sqrt((tensor_a / np.sum(tensor_a) - tensor_b / np.sum(tensor_b)) ** 2)) / 2
 
     return _L(data, treatment, func, weights)
 
 
-def _L(data: pd.DataFrame, treatment: str, func, weights: pd.Series = None):
+def _L(data: pd.DataFrame, treatment: str, func: Callable, weights: pd.Series = None):
     """Evaluate multivariate Ln imbalance"""
     df = data.drop(columns=treatment)
     bin_labels = list(df.groupby(list(df.columns)).groups.keys())

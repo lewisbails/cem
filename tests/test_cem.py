@@ -2,7 +2,7 @@ from contextlib import nullcontext
 import pytest
 import pandas as pd
 import numpy as np
-from cem import *
+from cem import CEM
 
 size = 50
 df = pd.DataFrame(

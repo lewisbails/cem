@@ -1,11 +1,12 @@
+"""Coarsened Exact Matching module"""
 from __future__ import annotations
 import pandas as pd
-from .imbalance import _imbalance, _generate_imbalance_schema, _coarsen
+from cem.imbalance import _imbalance, _generate_imbalance_schema, _coarsen
 
 
 class CEM:
     """
-    The CEM class allows users to experiment with different coarsening schemas on a single DataFrame.
+    Allows users to experiment with different coarsening schemas on a single DataFrame.
     The "imbalance" and "match" methods return the multivariate imbalance (pre or post matching) and individual observation weights post-matching, respectively.
 
     Parameters
@@ -28,15 +29,22 @@ class CEM:
         If H is not provided, the upper end of the range for the automatic H search.
 
     Attributes
-    ---------
+    ----------
     data : pandas.DataFrame
+        A dataframe containing the observations
     treatment : str
+        Name of column in dataframe containing the treatment variable
     outcome : str
+        Name of column in dataframe containing the outcome variable
     H : int
+        The number of bins to use for the continuous variables when calculating imbalance.
+        If None, H will be calculated using a heuristic
+        (i.e. The integer value between lower_H and upper_H that produced the median L1 imbalance)
     imbalance_schema : dict
         Independent coarsening schema used to calculate multivariate imbalance (pre or post matching)
     measure : str
         Multivariate imbalance measure
+
     """
 
     def __init__(

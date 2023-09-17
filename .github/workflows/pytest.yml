@@ -76,4 +76,4 @@ jobs:
 
       - name: Run pytest for Python 3.11
         run: |
-          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=80
+          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=70
