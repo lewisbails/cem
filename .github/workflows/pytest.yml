@@ -1,0 +1,79 @@
+name: Testing
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test_39:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install project dependencies
+        run: poetry install --with test
+
+      - name: Run pytest for Python 3.9
+        run: |
+          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=70
+
+  test_310:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install project dependencies
+        run: poetry install --with test
+
+      - name: Run pytest for Python 3.10
+        run: |
+          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=70
+
+  test_311:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install project dependencies
+        run: poetry install --with test
+
+      - name: Run pytest for Python 3.11
+        run: |
+          poetry run pytest --cov=cem --cov-report=term --cov-fail-under=70

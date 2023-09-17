@@ -1,0 +1,29 @@
+name: Code Style
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: Install project dependencies
+      run: poetry install --with style
+
+    - name: Check style and docstrings with flake8
+      run: poetry run flake8
+
+    
