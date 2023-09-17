@@ -32,7 +32,7 @@ schema = {}
     ],
 )
 def test_CEM(treatment, H, outcome):
-    """Test CEM class"""
+    """Test CEM object instantiation and initial imbalance check"""
     with outcome:
         c = CEM(df, treatment, "Y", H)
         c.imbalance()

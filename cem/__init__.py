@@ -1,1 +1,1 @@
-from cem import CEM
+from cem.matching import CEM
