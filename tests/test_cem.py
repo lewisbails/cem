@@ -1,3 +1,4 @@
+"""Tests for CEM"""
 from contextlib import nullcontext
 import pytest
 import pandas as pd
@@ -31,6 +32,7 @@ schema = {}
     ],
 )
 def test_CEM(treatment, H, outcome):
+    """Test CEM class"""
     with outcome:
         c = CEM(df, treatment, "Y", H)
         c.imbalance()

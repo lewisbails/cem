@@ -44,7 +44,6 @@ class CEM:
         Independent coarsening schema used to calculate multivariate imbalance (pre or post matching)
     measure : str
         Multivariate imbalance measure
-
     """
 
     def __init__(
