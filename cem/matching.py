@@ -1,7 +1,9 @@
 """Coarsened Exact Matching module"""
 from __future__ import annotations
+import warnings
 import pandas as pd
 from cem.imbalance import _imbalance, _generate_imbalance_schema, _coarsen
+from cem.util import _missing_continuous
 
 
 class CEM:
@@ -33,6 +35,8 @@ class CEM:
     ----------
     data : pandas.DataFrame
         A dataframe containing the observations
+    col_continuous : dict
+        For each column in data, whether the dtype is continuous
     treatment : str
         Name of column in dataframe containing the treatment variable
     outcome : str
@@ -58,6 +62,7 @@ class CEM:
         upper_H: int = 10,
     ):
         self.data = data.copy()
+        self.col_continuous = {col: dtype.kind in "ifc" for col, dtype in self.data.dtypes.items()}
         self.treatment = treatment
         self.outcome = outcome
         self.measure = measure
@@ -83,7 +88,20 @@ class CEM:
         float
             The residual imbalance
         """
-        weights = self.match(coarsening) if coarsening else None
+        if coarsening:
+            missing = _missing_continuous(coarsening, self.col_continuous, self.outcome, True)
+            if missing:
+                nunique = self.data.nunique()
+                warnings.warn(
+                    (
+                        f"Coarsening schema provided is missing columns {missing} that appear to be continuous in the data. "
+                        "This may result in few or no matches. Consider adding them to your coarsening schema.\n"
+                        f"N unique values for each column missing from schema: {nunique[missing].to_dict()}"
+                    )
+                )
+            weights = self.match(coarsening)
+        else:
+            weights = None
         df = _coarsen(self.data, self.imbalance_schema)
         return _imbalance(df.drop(columns=self.outcome), self.treatment, self.measure, weights)
 
@@ -103,7 +121,16 @@ class CEM:
         pandas.Series
             The weight to use for each observation of the provided data given the coarsening schema provided
         """
-        if coarsening is None:
+        if coarsening:
+            missing = _missing_continuous(coarsening, self.col_continuous, self.outcome, True)
+            if missing:
+                warnings.warn(
+                    (
+                        f"Coarsening schema provided is missing columns {missing} that appear to be continuous in the data. "
+                        "This may result in few or no matches. Consider adding them to your coarsening schema."
+                    )
+                )
+        else:
             coarsening = self.imbalance_schema
         return _match(self.data.drop(columns=self.outcome), self.treatment, coarsening)
 
@@ -160,8 +187,11 @@ def _weight(data: pd.DataFrame, treatment: str) -> pd.Series:
     gb = list(data.drop(columns=treatment).columns)
     prematched_weights = pd.Series([0] * len(data), index=data.index)
     matched = data.groupby(gb).filter(lambda x: x[treatment].nunique() == data[treatment].nunique())
+
     if not len(matched):
-        # no strata had all levels of the treatment variable
+        warnings.warn(
+            "No strata had all levels of the treatment variable. All weights will be zero. This usually happens when a continuous variable (including the treatment variable) is not coarsened."
+        )
         return prematched_weights
     matched_counts = matched[treatment].value_counts()
     weights = pd.concat([_weight_stratum(stratum[treatment], matched_counts) for _, stratum in matched.groupby(gb)])
