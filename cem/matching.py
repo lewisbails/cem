@@ -214,7 +214,7 @@ def _weight_stratum(treatment_levels: pd.Series, matches_by_level: pd.Series) ->
     M = matches_by_level
     ms = treatment_levels.value_counts()  # local counts for levels of the treatment variable
     if treatment_levels.dtype == "category":
-        T = treatment_levels.as_ordered().max()  # use as "under the policy" level
+        T = treatment_levels.cat.as_ordered().max()  # use as "under the policy" level
     else:
         T = treatment_levels.max()  # use as "under the policy" level
     stratum_weights = pd.Series(
