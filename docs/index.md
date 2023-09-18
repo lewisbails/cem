@@ -10,12 +10,11 @@
 
 Covariate imbalance between treated and control groups can lead to treatment effect estimates that are sensitive to model specification. CEM aims to reduce this imbalance by temporarily discretising covariates using a multidimensional grid, removing strata that do not contain all levels of the treatment variable, and reweighting the remaining examples.
 
+## Getting started
 
-## Table Of Contents
-
-1. [Tutorials](tutorials.md)
-3. [API Reference](reference.md)
-
+```bash
+pip install cem
+```
 
 ## Acknowledgements
 
