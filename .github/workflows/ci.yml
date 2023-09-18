@@ -36,8 +36,5 @@ jobs:
       - name: Install project dependencies
         run: poetry install --with dev
 
-      - name: Build docs
-        run: poetry run mkdocs build
-
       - name: Deploy docs
         run: poetry run mkdocs gh-deploy --force
