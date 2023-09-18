@@ -4,7 +4,7 @@
 ![pytest](https://github.com/lewisbails/cem/actions/workflows/pytest.yml/badge.svg?event=push&branch=master)
 ![style](https://github.com/lewisbails/cem/actions/workflows/style.yml/badge.svg?event=push&branch=master)
 
-**Source Code**: [https://github.com/lewisbails/cem](https://github.com/lewisbails/cem)
+**Source Code**: [github.com/lewisbails/cem](https://github.com/lewisbails/cem)
 
 **cem** is a lightweight library for Coarsened Exact Matching (CEM), a modern matching method used for causal inference.
 
