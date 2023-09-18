@@ -79,7 +79,7 @@ class CEM:
         Examples
         --------
             >>> c = CEM(df, "treatment", "outcome")
-            >>> c.imbalance()  # no weighting or removal of examples via cem
+            >>> c.imbalance()  # no weighting/removal of examples via cem
             >>> c.imbalance(schema)
 
         Parameters

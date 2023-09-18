@@ -17,12 +17,12 @@ df = pd.DataFrame(
 )
 
 schema = {
-    "float": ('cut', {'bins': 4}),
-    "int": ('qcut', {'q': 4}),
+    "float": ("cut", {"bins": 4}),
+    "int": ("qcut", {"q": 4}),
 }
 
 schema_missing_cont = {
-    "int": ('cut', {'bins': 4}),
+    "int": ("cut", {"bins": 4}),
 }
 
 

@@ -1,14 +1,14 @@
 """Multivariate imbalance module"""
 from __future__ import annotations
 from itertools import combinations
-from typing import Callable
+from typing import Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
 
-def _imbalance(data: pd.DataFrame, treatment: str, measure: str, weights: pd.Series = None):
+def _imbalance(data: pd.DataFrame, treatment: str, measure: str, weights: Optional[pd.Series] = None):
     """Evaluate multivariate imbalance of a set of observations"""
     if measure.lower() == "l1":
         return _L1(data, treatment, weights)
@@ -18,7 +18,7 @@ def _imbalance(data: pd.DataFrame, treatment: str, measure: str, weights: pd.Ser
         raise NotImplementedError(f'"{measure}" is not a valid multivariate imbalance measure (choose from l1 or l2)')
 
 
-def _generate_imbalance_schema(data: pd.DataFrame, H: int = 5) -> list[int]:
+def _generate_imbalance_schema(data: pd.DataFrame, H: int = 5) -> dict[str, tuple[str, int]]:
     schema = {}
     for i, x in data.items():
         if is_numeric_dtype(x):
@@ -26,22 +26,22 @@ def _generate_imbalance_schema(data: pd.DataFrame, H: int = 5) -> list[int]:
     return schema
 
 
-def _L1(data: pd.DataFrame, treatment: str, weights: pd.Series):
-    def func(tensor_a: np.ndarray, tensor_b: np.ndarray):
+def _L1(data: pd.DataFrame, treatment: str, weights: pd.Series) -> Union[pd.DataFrame, float]:
+    def func(tensor_a: np.ndarray, tensor_b: np.ndarray) -> float:
         return np.sum(np.abs(tensor_a / np.sum(tensor_a) - tensor_b / np.sum(tensor_b))) / 2
 
     return _L(data, treatment, func, weights)
 
 
-def _L2(data: pd.DataFrame, treatment: str, weights: pd.Series):
-    def func(tensor_a: np.ndarray, tensor_b: np.ndarray):
+def _L2(data: pd.DataFrame, treatment: str, weights: pd.Series) -> Union[pd.DataFrame, float]:
+    def func(tensor_a: np.ndarray, tensor_b: np.ndarray) -> float:
         return np.sum(np.sqrt((tensor_a / np.sum(tensor_a) - tensor_b / np.sum(tensor_b)) ** 2)) / 2
 
     return _L(data, treatment, func, weights)
 
 
-def _L(data: pd.DataFrame, treatment: str, func: Callable, weights: pd.Series = None):
-    """Evaluate multivariate Ln imbalance"""
+def _L(data: pd.DataFrame, treatment: str, func: Callable, weights: Optional[pd.Series] = None) -> Union[pd.DataFrame, float]:
+    """Evaluate multivariate Ln imbalance, possibly for a treatment variable with more than 2 levels"""
     df = data.drop(columns=treatment)
     bin_labels = list(df.groupby(list(df.columns)).groups.keys())
     if weights is None:
