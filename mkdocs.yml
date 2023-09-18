@@ -1,0 +1,17 @@
+site_name: "cem"
+
+theme:
+  name: "material"
+
+plugins:
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          docstring_style: numpy
+
+
+nav:
+  - cem: index.md
+  - tutorials.md
+  - API Reference: reference.md

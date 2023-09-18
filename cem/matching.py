@@ -1,6 +1,7 @@
-"""Coarsened Exact Matching module"""
+"""Core cem module for coarsening covariates, calculating imbalance and calculating example weights."""
 from __future__ import annotations
 import warnings
+from typing import Optional
 import pandas as pd
 from cem.imbalance import _imbalance, _generate_imbalance_schema, _coarsen
 from cem.util import _missing_continuous
@@ -14,7 +15,7 @@ class CEM:
 
     Parameters
     ----------
-    data : pandas.DataFrame
+    data: pandas.DataFrame
         A dataframe containing the observations
     treatment : str
         Name of column in dataframe containing the treatment variable
@@ -41,7 +42,7 @@ class CEM:
         Name of column in dataframe containing the treatment variable
     outcome : str
         Name of column in dataframe containing the outcome variable
-    H : int
+    H : int, optional
         The number of bins to use for the continuous variables when calculating imbalance.
         If None, H will be calculated using a heuristic
         (i.e. The integer value between lower_H and upper_H that produced the median L1 imbalance)
@@ -56,7 +57,7 @@ class CEM:
         data: pd.DataFrame,
         treatment: str,
         outcome: str,
-        H: int = None,
+        H: Optional[int] = None,
         measure: str = "l1",
         lower_H: int = 1,
         upper_H: int = 10,
@@ -72,12 +73,18 @@ class CEM:
         else:
             self.H, self.imbalance_schema = self._find_H_and_schema(lower_H, upper_H)
 
-    def imbalance(self, coarsening: dict = None) -> float:
+    def imbalance(self, coarsening: Optional[dict] = None) -> float:
         """Calculate the multivariate imbalance remaining after matching the data using some coarsening schema
+
+        Examples
+        --------
+            >>> c = CEM(df, "treatment", "outcome")
+            >>> c.imbalance()  # no weighting or removal of examples via cem
+            >>> c.imbalance(schema)
 
         Parameters
         ----------
-        coarsening : dict
+        coarsening : dict, optional
             Defines the strata. If None, the returned value is the imbalance prior to performing CEM.
             Keys are the covariate/column names and values are tuples of (func, kwargs).
             "func" is the name of the Pandas function to use for grouping the covariate (only "cut" and "qcut" are supported)
@@ -105,13 +112,18 @@ class CEM:
         df = _coarsen(self.data, self.imbalance_schema)
         return _imbalance(df.drop(columns=self.outcome), self.treatment, self.measure, weights)
 
-    def match(self, coarsening: dict = None) -> pd.Series:
+    def match(self, coarsening: dict) -> pd.Series:
         """Perform coarsened exact matching using some coarsening schema and return the weights for each observation
+
+        Examples
+        --------
+            >>> c = CEM(df, "treatment", "outcome")
+            >>> weights = c.match(schema)
 
         Parameters
         ----------
         coarsening : dict
-            Defines the strata. If None, the returned value is the imbalance prior to performing CEM.
+            Defines the strata.
             Keys are the covariate/column names and values are tuples of (func, kwargs).
             "func" is the name of the Pandas function to use for grouping the covariate (only "cut" and "qcut" are supported)
             "kwargs" is a dict of arguments to be passed to the Pandas cut function (along with the covariate data)
@@ -121,17 +133,14 @@ class CEM:
         pandas.Series
             The weight to use for each observation of the provided data given the coarsening schema provided
         """
-        if coarsening:
-            missing = _missing_continuous(coarsening, self.col_continuous, self.outcome, True)
-            if missing:
-                warnings.warn(
-                    (
-                        f"Coarsening schema provided is missing columns {missing} that appear to be continuous in the data. "
-                        "This may result in few or no matches. Consider adding them to your coarsening schema."
-                    )
+        missing = _missing_continuous(coarsening, self.col_continuous, self.outcome, True)
+        if missing:
+            warnings.warn(
+                (
+                    f"Coarsening schema provided is missing columns {missing} that appear to be continuous in the data. "
+                    "This may result in few or no matches. Consider adding them to your coarsening schema."
                 )
-        else:
-            coarsening = self.imbalance_schema
+            )
         return _match(self.data.drop(columns=self.outcome), self.treatment, coarsening)
 
     def _find_H_and_schema(self, lower: int, upper: int):
