@@ -37,7 +37,7 @@ jobs:
         run: poetry install --with dev
 
       - name: Build docs
-        run: mkdocs build
+        run: poetry run mkdocs build
 
       - name: Deploy docs
-        run: mkdocs gh-deploy --force
+        run: poetry run mkdocs gh-deploy --force
