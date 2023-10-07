@@ -10,8 +10,12 @@ from cem.imbalance import L1
 import statsmodels.api as sm
 
 boston = load_boston()
+
 O = "MEDV"  # outcome variable
 T = "CHAS"  # treatment variable
+
+y = boston[O]
+X = boston.drop(columns=O)
 ```
 
 |    |    CRIM |   ZN |   INDUS |   CHAS |   NOX |    RM |   AGE |    DIS |   RAD |   TAX |   PTRATIO |      B |   LSTAT |   MEDV |
@@ -28,13 +32,13 @@ First we coarsen the data in an automatic fashion to get a baseline imbalance. B
 
 ```python
 # coarsen predictor variables
-boston_coarse = coarsen(boston.drop(columns=O), T, "l1")
+X_coarse = coarsen(X, T, "l1")
 
 # match observations
-weights = match(boston_coarse, T)
+weights = match(X_coarse, T)
 
 # calculate weighted imbalance
-L1(boston_coarse, weights)
+L1(X_coarse, weights)
 ```
 
 ### Informed Coarsening
@@ -58,15 +62,14 @@ schema = {
    'LSTAT': (pd.cut, {'bins': 5})
 }
 
-boston_coarse = boston.drop(columns=O).apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name in schema else x)
+X_coarse = X.apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name in schema else x)
 
 # match observations
-weights = match(boston_coarse, T)
+weights = match(X_coarse, T)
 
 # calculate weighted imbalance
-L1(boston_coarse, weights)
+L1(X_coarse, weights)
 
 # perform weighted regression
-X, y = sm.add_constant(boston.drop(columns=O)), boston[O]
-model = sm.WLS(y, X, weights=weights)
+model = sm.WLS(y, sm.add_constant(X), weights=weights)
 ```

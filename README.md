@@ -8,6 +8,7 @@
 [cem](https://lewisbails.github.io/cem/) is a lightweight library for Coarsened Exact Matching (CEM) and is essentially a poor man's version of the original R-package [1]. CEM is a matching technique used to reduce covariate imbalance, which would otherwise lead to treatment effect estimates that are sensitive to model specification. By removing and/or reweighting certain observations via CEM, one can arrive at treatment effect estimates that are more stable than those found using other matching techniques like propensity score matching. The L1 and L2 multivariate imbalance measures are implemented as described in [2]. I make no claim to originality and thank the authors for their research.
 
 ## Usage
+
 ### Load the data
 
 ```python
@@ -18,8 +19,12 @@ from cem.imbalance import L1
 import statsmodels.api as sm
 
 boston = load_boston()
+
 O = "MEDV"  # outcome variable
 T = "CHAS"  # treatment variable
+
+y = boston[O]
+X = boston.drop(columns=O)
 ```
 
 |    |    CRIM |   ZN |   INDUS |   CHAS |   NOX |    RM |   AGE |    DIS |   RAD |   TAX |   PTRATIO |      B |   LSTAT |   MEDV |
@@ -36,13 +41,13 @@ First we coarsen the data in an automatic fashion to get a baseline imbalance. B
 
 ```python
 # coarsen predictor variables
-boston_coarse = coarsen(boston.drop(columns=O), T, "l1")
+X_coarse = coarsen(X, T, "l1")
 
 # match observations
-weights = match(boston_coarse, T)
+weights = match(X_coarse, T)
 
 # calculate weighted imbalance
-L1(boston_coarse, weights)
+L1(X_coarse, weights)
 ```
 
 ### Informed Coarsening
@@ -66,17 +71,16 @@ schema = {
    'LSTAT': (pd.cut, {'bins': 5})
 }
 
-boston_coarse = boston.drop(columns=O).apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name in schema else x)
+X_coarse = X.apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name in schema else x)
 
 # match observations
-weights = match(boston_coarse, T)
+weights = match(X_coarse, T)
 
 # calculate weighted imbalance
-L1(boston_coarse, weights)
+L1(X_coarse, weights)
 
 # perform weighted regression
-X, y = sm.add_constant(boston.drop(columns=O)), boston[O]
-model = sm.WLS(y, X, weights=weights)
+model = sm.WLS(y, sm.add_constant(X), weights=weights)
 ```
 
 ## References
