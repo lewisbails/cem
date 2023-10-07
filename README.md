@@ -8,11 +8,18 @@
 [cem](https://lewisbails.github.io/cem/) is a lightweight library for Coarsened Exact Matching (CEM) and is essentially a poor man's version of the original R-package [1]. CEM is a matching technique used to reduce covariate imbalance, which would otherwise lead to treatment effect estimates that are sensitive to model specification. By removing and/or reweighting certain observations via CEM, one can arrive at treatment effect estimates that are more stable than those found using other matching techniques like propensity score matching. The L1 and L2 multivariate imbalance measures are implemented as described in [2]. I make no claim to originality and thank the authors for their research.
 
 ## Usage
+### Load the data
 
 ```python
-from cem import CEM
+from cem import match
+from cem import coarsen
+from cem.imbalance import L1
+
+import statsmodels.api as sm
 
 boston = load_boston()
+O = "MEDV"  # outcome variable
+T = "CHAS"  # treatment variable
 ```
 
 |    |    CRIM |   ZN |   INDUS |   CHAS |   NOX |    RM |   AGE |    DIS |   RAD |   TAX |   PTRATIO |      B |   LSTAT |   MEDV |
@@ -23,47 +30,54 @@ boston = load_boston()
 |  3 | 0.03237 |    0 |    2.18 |      0 | 0.458 | 6.998 |  45.8 | 6.0622 |     3 |   222 |      18.7 | 394.63 |    2.94 |   33.4 |
 |  4 | 0.06905 |    0 |    2.18 |      0 | 0.458 | 7.147 |  54.2 | 6.0622 |     3 |   222 |      18.7 | 396.9  |    5.33 |   36.2 |
 
+### Automatic Coarsening
+
+First we coarsen the data in an automatic fashion to get a baseline imbalance. Be sure to drop the column containing your outcome variable prior to coarsening/matching. `coarsen` optionally takes a list of columns you'd like to auto-coarsen, ignoring the rest.
+
 ```python
-c = CEM(df, "CHAS", "MEDV")
+# coarsen predictor variables
+boston_coarse = coarsen(boston.drop(columns=O), T, "l1")
 
-# schema are dicts where keys are column names and values are tuples of (panda cut function name, function kwargs)
-schema = {
-   'CRIM': ('cut', {'bins': 4}),
-   'ZN': ('qcut', {'q': 4}),
-   'INDUS': ('qcut', {'q': 4}),
-   'NOX': ('cut', {'bins': 5}),
-   'RM': ('cut', {'bins': 5}),
-   'AGE': ('cut', {'bins': 5}),
-   'DIS': ('cut', {'bins': 5}),
-   'RAD': ('cut', {'bins': 6}),
-   'TAX': ('cut', {'bins': 5}),
-   'PTRATIO': ('cut', {'bins': 6}),
-   'B': ('cut', {'bins': 5}),
-   'LSTAT': ('cut', {'bins': 5})
-}
+# match observations
+weights = match(boston_coarse, T)
 
-# Check the multidimensional (L1) imbalance before and after matching
-c.imbalance() # 0.96
-c.imbalance(schema) # 0.60
-
-# Get the weights for each example after matching using the coarsening schema
-weights = c.match(schema)
-weights[weights > 0]
+# calculate weighted imbalance
+L1(boston_coarse, weights)
 ```
 
-|     |   weights |
-|-----|-----------|
-|   1 |  1.25     |
-|   2 |  2.5      |
-|  96 |  1.25     |
-| 142 |  1        |
-| 143 |  0.625    |
-| 144 |  0.625    |
-| 147 |  0.625    |
-| 148 |  0.625    |
-| 150 |  2.5      |
-| 151 |  2.5      |
+### Informed Coarsening
 
+It's recommended to coarsen using `pandas.cut` and `pandas.qcut`, but you are free to coarsen your predictor variables however you wish.
+
+```python
+# coarsen predictor variables
+schema = {
+   'CRIM': (pd.cut, {'bins': 4}),
+   'ZN': (pd.qcut, {'q': 4}),
+   'INDUS': (pd.qcut, {'q': 4}),
+   'NOX': (pd.cut, {'bins': 5}),
+   'RM': (pd.cut, {'bins': 5}),
+   'AGE': (pd.cut, {'bins': 5}),
+   'DIS': (pd.cut, {'bins': 5}),
+   'RAD': (pd.cut, {'bins': 6}),
+   'TAX': (pd.cut, {'bins': 5}),
+   'PTRATIO': (pd.cut, {'bins': 6}),
+   'B': (pd.cut, {'bins': 5}),
+   'LSTAT': (pd.cut, {'bins': 5})
+}
+
+boston_coarse = boston.drop(columns=O).apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name in schema else x)
+
+# match observations
+weights = match(boston_coarse, T)
+
+# calculate weighted imbalance
+L1(boston_coarse, weights)
+
+# perform weighted regression
+X, y = sm.add_constant(boston.drop(columns=O)), boston[O]
+model = sm.WLS(y, X, weights=weights)
+```
 
 ## References
 

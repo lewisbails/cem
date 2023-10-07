@@ -3,9 +3,15 @@
 ### Load the data
 
 ```python
-from cem import CEM
+from cem import match
+from cem import coarsen
+from cem.imbalance import L1
+
+import statsmodels.api as sm
 
 boston = load_boston()
+O = "MEDV"  # outcome variable
+T = "CHAS"  # treatment variable
 ```
 
 |    |    CRIM |   ZN |   INDUS |   CHAS |   NOX |    RM |   AGE |    DIS |   RAD |   TAX |   PTRATIO |      B |   LSTAT |   MEDV |
@@ -16,68 +22,51 @@ boston = load_boston()
 |  3 | 0.03237 |    0 |    2.18 |      0 | 0.458 | 6.998 |  45.8 | 6.0622 |     3 |   222 |      18.7 | 394.63 |    2.94 |   33.4 |
 |  4 | 0.06905 |    0 |    2.18 |      0 | 0.458 | 7.147 |  54.2 | 6.0622 |     3 |   222 |      18.7 | 396.9  |    5.33 |   36.2 |
 
-### Create the CEM object
+### Automatic Coarsening
 
-Most cases will require the dataset, the treatment variable name, and the outcome variable name.
+First we coarsen the data in an automatic fashion to get a baseline imbalance. Be sure to drop the column containing your outcome variable prior to coarsening/matching. `coarsen` optionally takes a list of columns you'd like to auto-coarsen, ignoring the rest.
 
 ```python
-c = CEM(df, "CHAS", "MEDV")
+# coarsen predictor variables
+boston_coarse = coarsen(boston.drop(columns=O), T, "l1")
+
+# match observations
+weights = match(boston_coarse, T)
+
+# calculate weighted imbalance
+L1(boston_coarse, weights)
 ```
 
-### Define a schema
+### Informed Coarsening
 
-Schemas are dicts where keys are column names and values are tuples of (pandas cut function name, function kwargs).
+It's recommended to coarsen using `pandas.cut` and `pandas.qcut`, but you are free to coarsen your predictor variables however you wish.
 
 ```python
+# coarsen predictor variables
 schema = {
-   'CRIM': ('cut', {'bins': 4}),
-   'ZN': ('qcut', {'q': 4}),
-   'INDUS': ('qcut', {'q': 4}),
-   'NOX': ('cut', {'bins': 5}),
-   'RM': ('cut', {'bins': 5}),
-   'AGE': ('cut', {'bins': 5}),
-   'DIS': ('cut', {'bins': 5}),
-   'RAD': ('cut', {'bins': 6}),
-   'TAX': ('cut', {'bins': 5}),
-   'PTRATIO': ('cut', {'bins': 6}),
-   'B': ('cut', {'bins': 5}),
-   'LSTAT': ('cut', {'bins': 5})
+   'CRIM': (pd.cut, {'bins': 4}),
+   'ZN': (pd.qcut, {'q': 4}),
+   'INDUS': (pd.qcut, {'q': 4}),
+   'NOX': (pd.cut, {'bins': 5}),
+   'RM': (pd.cut, {'bins': 5}),
+   'AGE': (pd.cut, {'bins': 5}),
+   'DIS': (pd.cut, {'bins': 5}),
+   'RAD': (pd.cut, {'bins': 6}),
+   'TAX': (pd.cut, {'bins': 5}),
+   'PTRATIO': (pd.cut, {'bins': 6}),
+   'B': (pd.cut, {'bins': 5}),
+   'LSTAT': (pd.cut, {'bins': 5})
 }
+
+boston_coarse = boston.drop(columns=O).apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name in schema else x)
+
+# match observations
+weights = match(boston_coarse, T)
+
+# calculate weighted imbalance
+L1(boston_coarse, weights)
+
+# perform weighted regression
+X, y = sm.add_constant(boston.drop(columns=O)), boston[O]
+model = sm.WLS(y, X, weights=weights)
 ```
-
-### Check the imbalance
-
-We can check the multivariate imbalance both before and after coarsening/reweighting to see if the coarsening schema has done what we expected it to do.
-
-```python
-c.imbalance() # 0.96
-c.imbalance(schema) # 0.60
-```
-
-## Calculate the weights
-
-Get the weights for each example after matching using the coarsening schema
-
-```python
-weights = c.match(schema)
-weights[weights > 0]
-```
-
-|     |   weights |
-|-----|-----------|
-|   1 |  1.25     |
-|   2 |  2.5      |
-|  96 |  1.25     |
-| 142 |  1        |
-| 143 |  0.625    |
-| 144 |  0.625    |
-| 147 |  0.625    |
-| 148 |  0.625    |
-| 150 |  2.5      |
-| 151 |  2.5      |
-
-
-## Perform regression
-
-We can perform a regression by simply removing zero-weighted examples, or we can use the actual weights themselves.
-In either case, given the imbalance was reduced, the effect estimates will be more robust to model specification.

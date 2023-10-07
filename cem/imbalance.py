@@ -1,39 +1,44 @@
-"""Multivariate imbalance module"""
-from __future__ import annotations
-from itertools import combinations
-from typing import Callable, Optional, Union
-
-import numpy as np
+"""Multidimensional histogram imbalance between two or more collections of observations"""
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
+import numpy as np
+from typing import Callable, Optional, Union
+from itertools import combinations
 
 
-def _imbalance(data: pd.DataFrame, treatment: str, measure: str, weights: Optional[pd.Series] = None):
-    """Evaluate multivariate imbalance of a set of observations"""
-    if measure.lower() == "l1":
-        return _L1(data, treatment, weights)
-    elif measure.lower() == "l2":
-        return _L2(data, treatment, weights)
-    else:
-        raise NotImplementedError(f'"{measure}" is not a valid multivariate imbalance measure (choose from l1 or l2)')
+def L1(data: pd.DataFrame, treatment: str, weights: Optional[pd.Series] = None) -> Union[pd.DataFrame, float]:
+    """
+    (Weighted) Multidimensional L1 imbalance between groups of observations of differing treatment levels
 
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Observations
+    treatment : str
+        Name of column containing the treatment level
+    weights : pandas.Series
+        Example weights
+    """
 
-def _generate_imbalance_schema(data: pd.DataFrame, H: int = 5) -> dict[str, tuple[str, int]]:
-    schema = {}
-    for i, x in data.items():
-        if is_numeric_dtype(x):
-            schema[i] = ("cut", {"bins": min(x.nunique(), H)})
-    return schema
-
-
-def _L1(data: pd.DataFrame, treatment: str, weights: pd.Series) -> Union[pd.DataFrame, float]:
     def func(tensor_a: np.ndarray, tensor_b: np.ndarray) -> float:
         return np.sum(np.abs(tensor_a / np.sum(tensor_a) - tensor_b / np.sum(tensor_b))) / 2
 
     return _L(data, treatment, func, weights)
 
 
-def _L2(data: pd.DataFrame, treatment: str, weights: pd.Series) -> Union[pd.DataFrame, float]:
+def L2(data: pd.DataFrame, treatment: str, weights: Optional[pd.Series] = None) -> Union[pd.DataFrame, float]:
+    """
+    (Weighted) Multidimensional L2 imbalance between groups of observations of differing treatment levels
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Observations
+    treatment : str
+        Name of column containing the treatment level
+    weights : pandas.Series
+        Example weights
+    """
+
     def func(tensor_a: np.ndarray, tensor_b: np.ndarray) -> float:
         return np.sum(np.sqrt((tensor_a / np.sum(tensor_a) - tensor_b / np.sum(tensor_b)) ** 2)) / 2
 
@@ -43,17 +48,18 @@ def _L2(data: pd.DataFrame, treatment: str, weights: pd.Series) -> Union[pd.Data
 def _L(data: pd.DataFrame, treatment: str, func: Callable, weights: Optional[pd.Series] = None) -> Union[pd.DataFrame, float]:
     """Evaluate multivariate Ln imbalance, possibly for a treatment variable with more than 2 levels"""
     df = data.drop(columns=treatment)
-    bin_labels = list(df.groupby(list(df.columns)).groups.keys())
+    strata_cols = list(df.columns)
+    strata_labels = list(df.groupby(strata_cols, observed=True).groups)
     if weights is None:
         weights = pd.Series([1] * len(data), index=data.index)
-    bin_counts = {}
-    for treatment_level, treatment_group in data.groupby(treatment):
-        tg = treatment_group.drop(columns=treatment)
-        bin_counts[treatment_level] = tg.groupby(list(tg.columns)).apply(lambda g: weights.loc[g.index].sum()).to_dict()
+    level_strata_counts = {}
+    for level, group in data.groupby(treatment):
+        tg = group.drop(columns=treatment)
+        level_strata_counts[level] = tg.groupby(strata_cols, observed=True).apply(lambda g: weights.loc[g.index].sum()).to_dict()
     L = {}
-    for (level_a, a_bin_weight_sums), (level_b, b_bin_weight_sums) in combinations(bin_counts.items(), 2):
-        a_counts_ = np.array([a_bin_weight_sums.get(k, 0) for k in bin_labels])
-        b_counts_ = np.array([b_bin_weight_sums.get(k, 0) for k in bin_labels])
+    for (level_a, level_a_strata_counts), (level_b, level_b_strata_counts) in combinations(level_strata_counts.items(), 2):
+        a_counts_ = np.array([level_a_strata_counts.get(s, 0) for s in strata_labels])
+        b_counts_ = np.array([level_b_strata_counts.get(s, 0) for s in strata_labels])
         L[(level_a, level_b)] = func(a_counts_, b_counts_)
     if len(L) == 1:
         return list(L.values())[0]
@@ -61,24 +67,3 @@ def _L(data: pd.DataFrame, treatment: str, func: Callable, weights: Optional[pd.
         [k + (v,) for k, v in L.items()],
         columns=[f"{treatment}_level_a", f"{treatment}_level_b", "imbalance"],
     )
-
-
-def _cut(col: str, func: str, func_kwargs: dict) -> pd.Series:
-    """Group values in a column into bins using some Pandas function"""
-    if "labels" in func_kwargs or "retbins" in func_kwargs:
-        raise ValueError('"labels" and "retbins" arguments are not configurable during coarsening')
-    if func == "qcut":
-        return pd.qcut(col, labels=False, retbins=False, **func_kwargs)
-    elif func == "cut":
-        return pd.cut(col, labels=False, retbins=False, **func_kwargs)
-    else:
-        raise ValueError(f'"{func}" not supported. Coarsening only possible with "cut" and "qcut".')
-
-
-def _coarsen(data: pd.DataFrame, coarsening: dict) -> pd.DataFrame:
-    """Coarsen data based on schema"""
-    df_coarse = data.apply(
-        lambda x: _cut(x, coarsening[x.name][0], coarsening[x.name][1]) if x.name in coarsening else x,
-        axis=0,
-    )
-    return df_coarse

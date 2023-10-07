@@ -1,1 +1,2 @@
-from cem.matching import CEM
+from cem.match import match
+from cem.coarsen import coarsen
