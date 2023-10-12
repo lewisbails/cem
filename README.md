@@ -12,8 +12,8 @@
 ### Load the data
 
 ```python
-from cem import match
-from cem import coarsen
+from cem.match import match
+from cem.coarsen import coarsen
 from cem.imbalance import L1
 
 import statsmodels.api as sm
