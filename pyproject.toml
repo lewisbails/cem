@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cem"
-version = "1.0.0"
+version = "1.1.0"
 description = "Coarsened Exact Matching for Causal Inference"
 authors = ["Lewis Bails <lewis.bails@gmail.com>"]
 readme = "README.md"
