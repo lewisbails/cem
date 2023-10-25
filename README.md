@@ -35,9 +35,9 @@ X = boston.drop(columns=O)
 |  3 | 0.03237 |    0 |    2.18 |      0 | 0.458 | 6.998 |  45.8 | 6.0622 |     3 |   222 |      18.7 | 394.63 |    2.94 |   33.4 |
 |  4 | 0.06905 |    0 |    2.18 |      0 | 0.458 | 7.147 |  54.2 | 6.0622 |     3 |   222 |      18.7 | 396.9  |    5.33 |   36.2 |
 
-### Automatic Coarsening
+### Baseline Coarsening
 
-First we coarsen the data in an automatic fashion to get a baseline imbalance. Be sure to drop the column containing your outcome variable prior to coarsening/matching. `coarsen` optionally takes a list of columns you'd like to auto-coarsen, ignoring the rest.
+First we coarsen the data in an automatic fashion and calculate a baseline imbalance we wish to improve upon. Be sure to drop the column containing your outcome variable prior to coarsening/matching. `coarsen` optionally takes a list of columns you'd like to auto-coarsen, ignoring the rest.
 
 ```python
 # coarsen predictor variables
@@ -46,8 +46,8 @@ X_coarse = coarsen(X, T, "l1")
 # match observations
 weights = match(X_coarse, T)
 
-# calculate weighted imbalance
-L1(X_coarse, weights)
+# calculate weighted imbalance, this is our baseline
+L1(X_coarse, T, weights)
 ```
 
 ### Informed Coarsening
@@ -71,13 +71,16 @@ schema = {
    'LSTAT': (pd.cut, {'bins': 5})
 }
 
-X_coarse = X.apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name in schema else x)
+X_coarse_2 = X.apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name in schema else x)
 
 # match observations
-weights = match(X_coarse, T)
+weights = match(X_coarse_2, T)
 
 # calculate weighted imbalance
-L1(X_coarse, weights)
+L1(X_coarse_2, T, weights)
+
+# we can also calculate the weighted imbalance using the independently coarsened data
+L1(X_coarse, T, weights)
 
 # perform weighted regression
 model = sm.WLS(y, sm.add_constant(X), weights=weights)
