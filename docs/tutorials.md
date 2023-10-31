@@ -38,7 +38,7 @@ X_coarse = coarsen(X, T, "l1")
 weights = match(X_coarse, T)
 
 # calculate weighted imbalance
-L1(X_coarse, weights)
+L1(X_coarse, T, weights)
 ```
 
 ### Informed Coarsening
@@ -68,7 +68,7 @@ X_coarse = X.apply(lambda x: schema[x.name][0](x, **schema[x.name][1]) if x.name
 weights = match(X_coarse, T)
 
 # calculate weighted imbalance
-L1(X_coarse, weights)
+L1(X_coarse, T, weights)
 
 # perform weighted regression
 model = sm.WLS(y, sm.add_constant(X), weights=weights)
